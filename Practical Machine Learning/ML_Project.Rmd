@@ -11,7 +11,7 @@ library(caret)
 library(doParallel)
 library(knitr)
 theme_set(theme_light())
-options(digits = 4)
+options(digits = 2)
 knitr::opts_chunk$set(fig.height = 4, fig.width = 4, echo = TRUE, message = FALSE)
 ```
 
@@ -75,9 +75,11 @@ The classification models chosen are:
 * random forest (ranger)
 * gradient boosting machines (gbm)
 
-For the resampling method, the k-cross validation method ("repeatedcv") is applied to reduce sampling bias.
+For the resampling method, the repeated k-cross validation method ("repeatedcv") is applied to reduce sampling bias.
 
 ## Train model: linear discriminant analysis (lda)
+
+Linear discriminant analysis (LDA), normal discriminant analysis (NDA), or discriminant function analysis is a generalization of Fisher's linear discriminant, a method used in statistics, pattern recognition and machine learning to find a linear combination of features that characterizes or separates two or more classes of objects or events. The resulting combination may be used as a linear classifier, or, more commonly, for dimensionality reduction before later classification. Source: https://en.wikipedia.org/wiki/Linear_discriminant_analysis
 
 ```{r}
 ldaControl <- trainControl(method = "repeatedcv", 
@@ -103,6 +105,8 @@ The accuracy of the lda model is around `r conf_lda$overall[1]*100`%, which is l
 
 ## Train model: random forest (rf)
 
+Random forests or random decision forests are an ensemble learning method for classification, regression and other tasks that operates by constructing a multitude of decision trees at training time and outputting the class that is the mode of the classes (classification) or mean prediction (regression) of the individual trees. Random decision forests correct for decision trees' habit of overfitting to their training set. Source: https://en.wikipedia.org/wiki/Random_forest
+
 ```{r}
 rfControl <- trainControl(method = "repeatedcv", 
                            number = 5, 
@@ -123,9 +127,12 @@ Print confusion matrix for random forest model
 pred_rf <- predict(rf_fit, newdata = testing)
 conf_rf <- confusionMatrix(pred_rf, testing$classe)
 conf_rf
+
+## oob error rate
+rf_fit$finalModel$err.rate[500, 1]
 ```
 
-The random forest model overall accuracy is `r conf_rf$overall[1]*100`%, significanlty greater than the linear discriminant analysis model.
+The random forest model overall accuracy is `r conf_rf$overall[1]*100`%, with an out-of-sample error of `r rf_fit$finalModel$err.rate[500, 1]*100`%. The overall accuracy rate is significanlty greater than the linear discriminant analysis model.
 
 Final Model and Variable Importance List
 ```{r}
@@ -136,9 +143,11 @@ varImp(rf_fit)
 plot(rf_fit$finalModel, main = "Random Forest Model Error by Number of Trees")
 ```
 
-The optimal number of predictors as shown in the plot titled "Random Forest Accuracy by Number of Predictors" is 2. There is a slight decrease in the increase number of predictors to 27. After this point, the model accuracy decreases dramatically as the number of predictors increases. In the plot titled "Random Forest Model Error by Number of Trees", the error rate stabilizes after approximately 50 trees, suggesting this number of trees is optimmum.
+The optimal number of predictors as shown in the plot titled "Random Forest Accuracy by Number of Predictors" is 27. After this point, the model accuracy decreases dramatically as the number of predictors increases. In the plot titled "Random Forest Model Error by Number of Trees", the error rate stabilizes after approximately 50 trees, suggesting this number of trees is optimmum.
 
-## Train model: gradient boosted method (gbm)
+## Train model: gradient boosted machines (gbm)
+
+Gradient boosting is a machine learning technique for regression and classification problems, which produces a prediction model in the form of an ensemble of weak prediction models, typically decision trees. It builds the model in a stage-wise fashion like other boosting methods do, and it generalizes them by allowing optimization of an arbitrary differentiable loss function. Source: https://en.wikipedia.org/wiki/Gradient_boosting
 
 ```{r}
 gbmControl <- trainControl(method = "repeatedcv", 
@@ -180,7 +189,7 @@ conf_gbm
 
 ## Conclusion
 
-The gradient boosted method (gbm) model overall accuracy is `r conf_gbm$overall[1]*100`%, significanlty greater than the linear discriminant analysis model and slightly better than the randon forest model. This is the best model and will be applied to predict the classe variable in the test dataset (test_clean).
+The gradient boosted mchinas (gbm) model overall accuracy is `r conf_gbm$overall[1]*100`%, with an out-of-sample error rate of `r (1- conf_gbm$overall[1])*100`%. The overall accuracy is significanlty greater than the linear discriminant analysis model and slightly better than the randon forest model. This is the best model and will be applied to predict the classe variable in the test dataset (test_clean).
 
 ```{r}
 final_pred <- predict(gbmfit_f, newdata = test_clean)
