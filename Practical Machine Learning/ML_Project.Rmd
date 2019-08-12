@@ -34,7 +34,7 @@ str(train_data)
 str(test_data)
 ```
 
-The raw training dataset has 19,622 records with 160 variables (columns). The raw testing has 20 records with the same number of columns. From the str output, there are several variables with NAs or blanks.
+The raw training dataset has `r nrow(train_data)` records with `r ncol(train_data)` variables (columns). The raw testing has `r nrow(test_data)` records with the same number of columns. From the str output, there are several variables with NAs or blanks.
 
 Print variables with NAs or blanks ("") percentage greater than 0.8
 ```{r}
@@ -52,7 +52,7 @@ dim(train_clean)
 dim(test_clean)
 ```
 
-The final training dataset has the same records with 53 variables. This data set will be used to create the training and testing datasets for the caret package.
+The final training dataset has the same records with `r ncol(train_clean)` variables. This data set will be used to create the training and testing datasets for the caret package.
 
 ```{r}
 set.seed(105)
@@ -75,7 +75,7 @@ The classification models chosen are:
 * random forest (ranger)
 * gradient boosting machines (gbm)
 
-For the resampling method, the k-cross validation method ("repeatedcv") to reduce sampling bias.
+For the resampling method, the k-cross validation method ("repeatedcv") is applied to reduce sampling bias.
 
 ## Train model: linear discriminant analysis (lda)
 
@@ -96,10 +96,10 @@ Print confusion matrix for lda model
 ```{r}
 pred_lda <- predict(ldafit, newdata = testing)
 conf_lda <- confusionMatrix(pred_lda, testing$classe)
-conf_lda$table
+conf_lda
 ```
 
-The accuracy of the lda model is around 70%, which is less than satisfactory (model accuracy must be greater than 90%).
+The accuracy of the lda model is around `r conf_lda$overall[1]*100`%, which is less than satisfactory (model accuracy must be greater than 90%).
 
 ## Train model: random forest (rf)
 
@@ -122,13 +122,12 @@ Print confusion matrix for random forest model
 ```{r}
 pred_rf <- predict(rf_fit, newdata = testing)
 conf_rf <- confusionMatrix(pred_rf, testing$classe)
-conf_rf$table
-conf_rf$overall[1]
+conf_rf
 ```
 
-The random forest model overall accuracy is 99.52%, significanlty greater than the linear discriminant analysis model.
+The random forest model overall accuracy is `r conf_rf$overall[1]*100`%, significanlty greater than the linear discriminant analysis model.
 
-Final Model
+Final Model and Variable Importance List
 ```{r}
 rf_fit$finalModel
 
@@ -139,7 +138,7 @@ plot(rf_fit$finalModel, main = "Random Forest Model Error by Number of Trees")
 
 The optimal number of predictors as shown in the plot titled "Random Forest Accuracy by Number of Predictors" is 2. There is a slight decrease in the increase number of predictors to 27. After this point, the model accuracy decreases dramatically as the number of predictors increases. In the plot titled "Random Forest Model Error by Number of Trees", the error rate stabilizes after approximately 50 trees, suggesting this number of trees is optimmum.
 
-## Train model: gradient boosted machines (gbm)
+## Train model: gradient boosted method (gbm)
 
 ```{r}
 gbmControl <- trainControl(method = "repeatedcv", 
@@ -176,18 +175,26 @@ Print confusion matrix and accuracy for gbm model
 ```{r}
 pred_gbm <- predict(gbmfit_f, newdata = testing)
 conf_gbm <- confusionMatrix(pred_gbm, testing$classe)
-conf_gbm$table
-conf_gbm$overall[1]
+conf_gbm
 ```
 
+## Conclusion
+
+The gradient boosted method (gbm) model overall accuracy is `r conf_gbm$overall[1]*100`%, significanlty greater than the linear discriminant analysis model and slightly better than the randon forest model. This is the best model and will be applied to predict the classe variable in the test dataset (test_clean).
 
 ```{r}
 final_pred <- predict(gbmfit_f, newdata = test_clean)
 final_pred
 ```
 
+De-provision parallel cluster
 ```{r}
 stopCluster(cl)
 registerDoSEQ()
 ```
 
+References:
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+Read more: http://groupware.les.inf.puc-rio.br/har#ixzz5wKbTlgFa
